@@ -1,18 +1,9 @@
 import pytest
-from aiohttp import web
-from main import create_http_server
-from mongo_db_client import messages_collection
-
-
-@pytest.fixture
-async def client():
-    app = await create_http_server()
-    client = await app.test_client()  # Отримуємо тестовий клієнт для роботи з сервером
-    yield client
-    await app.cleanup()  # Очищаємо ресурси після завершення тестів
-
+from app.mongo_db_client import messages_collection
 
 # Тест для головної сторінки
+
+
 @pytest.mark.asyncio
 async def test_home(client):
     resp = await client.get('/')  # Робимо GET-запит на головну сторінку

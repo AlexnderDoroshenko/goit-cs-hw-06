@@ -1,6 +1,5 @@
 import pytest
 import websockets
-import asyncio
 
 
 @pytest.mark.asyncio

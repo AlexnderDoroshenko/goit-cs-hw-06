@@ -1,38 +1,28 @@
-import asyncio
+import threading
 from http_serv import create_http_server
 from socket_serv import start_socket_server
-import logging
+from logger import get_logger
 
-# Налаштування логування
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+log = get_logger("main")
 
 
-class TaskLoggerAdapter(logging.LoggerAdapter):
-    def process(self, msg, kwargs):
-        task_name = asyncio.current_task().get_name(
-        ) if asyncio.current_task() else 'unknown'
-        return f"[{task_name}] {msg}", kwargs
+def main():
+    # Запуск HTTP сервера в окремому потоці
+    http_thread = threading.Thread(target=create_http_server)
+    http_thread.start()
+    log.info("HTTP server started in a separate thread")
 
+    # Запуск Socket сервера в окремому потоці
+    socket_thread = threading.Thread(target=start_socket_server)
+    socket_thread.start()
+    log.info("Socket server started in a separate thread")
 
-logger = TaskLoggerAdapter(logging.getLogger(__name__), {})
+    # Дочекаємося завершення роботи обох серверів
+    http_thread.join()
+    socket_thread.join()
 
+    log.info("Both servers are running")
 
-async def main():
-    loop = asyncio.get_event_loop()
-
-    # Запуск HTTP сервера
-    loop.create_task(create_http_server())  # Стартуємо HTTP сервер
-    logger.info("Run http server started")
-
-    # Запуск Socket сервера
-    loop.create_task(start_socket_server())
-    logger.info("Run socket server started")
-
-    await asyncio.gather()  # Чекаємо на обидва сервери
-    logger.info("Socket and http servers up procedure is ended")
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()

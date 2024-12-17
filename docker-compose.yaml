@@ -1,33 +1,29 @@
 services:
   mongodb:
-    image: mongo:latest                                          # Використовуємо офіційний образ MongoDB
+    image: mongo:latest
     container_name: mongodb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}  # Головний користувач
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}  # Пароль для головного користувача
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
     ports:
-      - "27017:27017"                                            # Відкриваємо порт для MongoDB
+      - "27017:27017"
     volumes:
-      - mongodb_data:/app/storage                                # Прив'язуємо volume для збереження даних
+      - ./app/storage/mongodb:/data/db  # ✅ Зберігаємо дані MongoDB у локальній папці
 
   app:
     build: .
     container_name: web_app
     ports:
-      - "3000:3000"                                              # Відкриваємо порт для нашої аплікації
+      - "3000:3000"
     depends_on:
-      - mongodb                                                  # Переконуємось, що MongoDB піднята перед додатком
-    working_dir: /app                                            # Встановлюємо /app як робочу директорію
+      - mongodb
+    working_dir: /app  # Робоча директорія для додатка
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}  # Головний користувач
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}  # Пароль для головного користувача
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE} 
-      PYTHONPATH: /app                                           # Додаємо шлях для імпорту модулів
-      MONGO_URI: mongodb://root:rootpassword@mongodb:27017       # Використовуємо адресу MongoDB
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      PYTHONPATH: /app
     volumes:
-      - ./app:/app                                               # Монтируемо локальні файли в контейнер
-    command: ["python", "main.py"]                               # Команда для запуску вашої аплікації
-
-volumes:
-  mongodb_data:                                                  # Оголошуємо volume для MongoDB
+      - ./app:/app  # Локальні файли програми підключені до /app
+    command: ["python", "main.py"]

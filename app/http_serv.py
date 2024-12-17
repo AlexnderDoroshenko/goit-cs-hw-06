@@ -2,16 +2,14 @@ import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import urllib.parse  # Для парсингу POST-даних
 from pathlib import Path
-import logging
-import time
 
-# Налаштування логування
-logging.basicConfig(level=logging.DEBUG)
+from logger import get_logger
+from socket_serv import HOST, PORT
 
-HTTP_SERVER_PORT = 3000
-SOCKET_SERVER_HOST = '0.0.0.0'
-SOCKET_SERVER_PORT = 5000
-# (Path(__file__).parent).joinpath("templates")
+log = get_logger("http_server")
+
+HTTP_SERVER_HOST, HTTP_SERVER_PORT = "0.0.0.0", 3000
+SOCKET_SERVER_HOST, SOCKET_SERVER_PORT = HOST, PORT
 TEMPLATES_PATH = Path(__file__).parent
 
 SOURCE_MAP = {
@@ -63,44 +61,55 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
                 try:
                     self.send_to_socket_server(payload)
                 except Exception as err:
-                    logging.error("Send to Socket Server Error \n{err}")
+                    log.error("Send to Socket Server Error \n{err}")
                     self.send_response(500)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
-                    self.wfile.write(f"<h1>{err}</h1>")
+                    # self.get_source('/message.html')
+                    self.wfile.write(f"<h1>{err}<h1>")
                 else:
+                    log.error("Successful response")
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
-                    self.wfile.write(b"<h1>Message Sent Successfully!</h1>")
-                    time.sleep(1)
-                    self.get_source('/message.html')
+                    # self.get_source('/message.html')
+                    self.wfile.write(b"<h1>Message Sent Successfully!<h1>")
             else:
+                log.error("User Error \n{err}")
                 self.send_response(400)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
+                # self.get_source('/message.html')
                 self.wfile.write(
-                    b"<h1>All fields should be filled out before send!</h1>")
+                    b"<h1>All fields should be filled out before send!<h1>")
+            self.wfile.write(
+                b'<a href="javascript: history.back()">Go Back</a>')
         else:
+            log.error("Source not found Error \n{err}")
             self.get_error_source()
 
     def send_to_socket_server(self, data):
         """ Відправка повідомлення на Socket-сервер """
+        log.info("Start send to socket server")
         try:
             with socket.socket(
                     socket.AF_INET, socket.SOCK_STREAM) as client_socket:
                 client_socket.connect((SOCKET_SERVER_HOST, SOCKET_SERVER_PORT))
                 message = f"{data}".encode('utf-8')
                 client_socket.sendall(message)
+            log.info("Success")
         except Exception as e:
-            print(f"Error sending data to Socket server: {e}")
+            log.error(f"Error sending data to Socket server: {e}")
+            raise ConnectionError(e)
 
 
 def create_http_server():
+    log.info("Start create http")
     httpd = ThreadingHTTPServer(
-        ('0.0.0.0', HTTP_SERVER_PORT), MyHTTPRequestHandler)
+        (HTTP_SERVER_HOST, HTTP_SERVER_PORT), MyHTTPRequestHandler)
     print(f"Threaded HTTP server running on port {HTTP_SERVER_PORT}...")
     httpd.serve_forever()
+    log.info("Http server started")
 
 
 if __name__ == "__main__":
